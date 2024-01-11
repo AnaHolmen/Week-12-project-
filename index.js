@@ -11,7 +11,8 @@ let html = (strings, ...values) =>
 //lit-html snippet - End
 
 class House {
-  constructor(name) {
+  constructor(id, name) {
+    this.id = id;
     this.name = name;
     this.rooms = [];
   }
@@ -29,8 +30,6 @@ class Room {
 }
 
 class HouseService {
-  //   static url = "https://ancient-taiga-31359.herokuapp.com/api/houses";
-
   static url = "https://659c8892633f9aee7907b1bf.mockapi.io/week12API/Houses";
 
   static getAllHouses() {
@@ -38,15 +37,16 @@ class HouseService {
   }
 
   static createHouse(name) {
+    console.log("Creating house with name:", name);
     return $.post(this.url, { name });
   }
 
   static updateHouse(house) {
     console.log("update house", house);
     let api = $.ajax({
-      url: `${this.url}/${house.id}/rooms`,
+      url: `${this.url}/${house.id}`,
       dataType: "json",
-      data: JSON.stringify(house.rooms),
+      data: JSON.stringify(house),
       contentType: "application/json",
       type: "PUT",
     });
@@ -84,12 +84,13 @@ class DOMManager {
   static addRoom(id) {
     console.log("addroom...", id);
     for (let house of this.houses) {
-      if (house.id == id) {
-        console.log("house", house.id);
+      if (house.name == id) {
+        // Use house.name instead of house.id
+        console.log("house", house.name);
         house.rooms.push(
           new Room(
-            $(`#${house.id}-room-name`).val(),
-            $(`#${house.id}-room-area`).val()
+            $(`#${house.name}-room-name`).val(),
+            $(`#${house.name}-room-area`).val()
           )
         );
         console.log("house object", house);
@@ -138,7 +139,7 @@ class DOMManager {
                 <div class="col-sm">
                   <input
                     type="text"
-                    id="${house.id}-room-name"
+                    id="${house.name}-room-name"
                     class="form-control"
                     placeholder="room name"
                   />
@@ -146,14 +147,14 @@ class DOMManager {
                 <div class="col-sm">
                   <input
                     type="text"
-                    id="${house.id}-room-area"
+                    id="${house.name}-room-area"
                     class="form-control"
                     placeholder="room area"
                   />
                 </div>
               </div>
               <button
-                id="${house.id}-new-room"
+                id="${house.name}-new-room"
                 onclick="DOMManager.addRoom('${house.id}')"
                 class="btn btn-primary form-control"
               >
