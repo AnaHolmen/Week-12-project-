@@ -43,8 +43,12 @@ class HouseService {
   }
 
   static createHouse(name) {
-    console.log("Creating house with name:", name);
-    return $.post(this.url, { name });
+    const newHouse = {
+      name: name,
+      rooms: [],
+    };
+
+    return $.post(this.url, newHouse);
   }
 
   static updateHouse(house) {
@@ -88,24 +92,30 @@ class DOMManager {
   }
 
   static addRoom(id) {
-    console.log("addroom called with id", id);
+    console.log("addRoom called with id", id);
+
     for (let house of this.houses) {
-      console.log("house.id:", house.id);
+      console.log("Checking house.id:", house.id);
+
       if (house.id == id) {
-        house.rooms.push(
-          new Room(
-            $(`#${house.id}-room-name`).val(),
-            $(`#${house.id}-room-area`).val()
-          )
-        );
-        console.log("house object", house);
+        console.log("Match found! Adding room to house with id:", house.id);
+
+        const roomName = $(`#${house.id}-room-name`).val();
+        const roomArea = $(`#${house.id}-room-area`).val();
+
+        console.log("Room name:", roomName);
+        console.log("Room area:", roomArea);
+
+        house.rooms.push(new Room(roomName, roomArea));
+
+        console.log("Updated house object", house);
+
         HouseService.updateHouse(house)
           .then(() => HouseService.getAllHouses())
           .then((houses) => this.render(houses));
       }
     }
   }
-
   static deleteRoom(houseId, roomId) {
     for (let house of this.houses) {
       if (house.id == houseId) {
@@ -159,7 +169,7 @@ class DOMManager {
                 </div>
               </div>
               <button
-                id="${house.name}-new-room"
+                id="${house.id}-new-room"
                 onclick="DOMManager.addRoom('${house.id}')"
                 class="btn btn-primary form-control"
               >
