@@ -24,9 +24,15 @@ class House {
 
 class Room {
   constructor(name, area) {
+    this.id = generateUniqueId();
     this.name = name;
     this.area = area;
   }
+}
+
+function generateUniqueId() {
+  // This is a simple function to generate a unique ID, you might want to use a more sophisticated one
+  return "_" + Math.random().toString(36).substr(2, 9);
 }
 
 class HouseService {
@@ -82,15 +88,14 @@ class DOMManager {
   }
 
   static addRoom(id) {
-    console.log("addroom...", id);
+    console.log("addroom called with id", id);
     for (let house of this.houses) {
-      if (house.name == id) {
-        // Use house.name instead of house.id
-        console.log("house", house.name);
+      console.log("house.id:", house.id);
+      if (house.id == id) {
         house.rooms.push(
           new Room(
-            $(`#${house.name}-room-name`).val(),
-            $(`#${house.name}-room-area`).val()
+            $(`#${house.id}-room-name`).val(),
+            $(`#${house.id}-room-area`).val()
           )
         );
         console.log("house object", house);
@@ -108,9 +113,7 @@ class DOMManager {
           if (room.id == roomId) {
             house.rooms.splice(house.rooms.indexOf(room), 1);
             HouseService.updateHouse(house)
-              .then(() => {
-                HouseService.getAllHouses();
-              })
+              .then(() => HouseService.getAllHouses())
               .then((houses) => this.render(houses));
           }
         }
@@ -119,9 +122,11 @@ class DOMManager {
   }
 
   static render(houses) {
+    console.log("Rendering houses:", houses);
     this.houses = houses;
     $("#app").empty();
     for (let house of houses) {
+      console.log("Rendering house:", house);
       $("#app").prepend(html`
         <div id="${house.id}" class="card">
           <div class="card-header">
@@ -170,6 +175,7 @@ class DOMManager {
       `);
 
       for (let room of house.rooms) {
+        console.log("Rendering room:", room);
         $(`#rooms-${house.id}`).append(`
             <p>
               <strong>Name:</strong> ${room.name}<br>
