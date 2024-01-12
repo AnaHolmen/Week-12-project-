@@ -30,13 +30,8 @@ class Room {
   }
 }
 
-function generateUniqueId() {
-  // This is a simple function to generate a unique ID, you might want to use a more sophisticated one
-  return "_" + Math.random().toString(36).substr(2, 9);
-}
-
 class HouseService {
-  static url = "https://659c8892633f9aee7907b1bf.mockapi.io/week12API/Houses";
+  static url = "https://659c8892633f9aee7907b1bf.mockapi.io/week12API/house";
 
   static getAllHouses() {
     return $.get(this.url);
@@ -73,7 +68,7 @@ class HouseService {
 }
 
 class DOMManager {
-  static houses;
+  static houses = [];
 
   static getAllHouses() {
     HouseService.getAllHouses().then((houses) => this.render(houses));
@@ -94,27 +89,50 @@ class DOMManager {
   static addRoom(id) {
     console.log("addRoom called with id", id);
 
-    for (let house of this.houses) {
-      console.log("Checking house.id:", house.id);
+    const house = this.houses.find((house) => house.id === id);
 
-      if (house.id == id) {
-        console.log("Match found! Adding room to house with id:", house.id);
-
-        const roomName = $(`#${house.id}-room-name`).val();
-        const roomArea = $(`#${house.id}-room-area`).val();
-
-        console.log("Room name:", roomName);
-        console.log("Room area:", roomArea);
-
-        house.rooms.push(new Room(roomName, roomArea));
-
-        console.log("Updated house object", house);
-
-        HouseService.updateHouse(house)
-          .then(() => HouseService.getAllHouses())
-          .then((houses) => this.render(houses));
-      }
+    if (!house) {
+      console.error(`House with id ${id} not found`);
+      console.log(
+        "Available house IDs:",
+        this.houses.map((h) => h.id).join(", ")
+      );
+      return;
     }
+
+    console.log("Checking house.id:", house.id);
+
+    const roomNameElement = $(`#${id}-room-name`);
+    const roomAreaElement = $(`#${id}-room-area`);
+
+    console.log("roomNameElement length:", roomNameElement.length);
+    console.log("roomAreaElement length:", roomAreaElement.length);
+
+    if (!roomNameElement.length || !roomAreaElement.length) {
+      console.error(`Room elements not found for house with id ${id}`);
+      console.log(
+        "Available elements:",
+        roomNameElement.length,
+        roomAreaElement.length
+      );
+      return;
+    }
+
+    const roomName = roomNameElement.val();
+    const roomArea = roomAreaElement.val();
+
+    console.log("Room Name:", roomName);
+    console.log("Room Area:", roomArea);
+
+    house.rooms.push(new Room(roomName, roomArea));
+
+    HouseService.updateHouse(house)
+      .then(() => HouseService.getAllHouses())
+      .then((houses) => {
+        console.log("Houses after update:", houses);
+        this.render(houses);
+      })
+      .catch((error) => console.error("Error updating house:", error));
   }
   static deleteRoom(houseId, roomId) {
     for (let house of this.houses) {
@@ -124,7 +142,8 @@ class DOMManager {
             house.rooms.splice(house.rooms.indexOf(room), 1);
             HouseService.updateHouse(house)
               .then(() => HouseService.getAllHouses())
-              .then((houses) => this.render(houses));
+              .then((houses) => this.render(houses))
+              .catch((error) => console.error("Error updating house:", error));
           }
         }
       }
@@ -134,10 +153,13 @@ class DOMManager {
   static render(houses) {
     console.log("Rendering houses:", houses);
     this.houses = houses;
-    $("#app").empty();
+    $(`#app`).empty();
+
     for (let house of houses) {
       console.log("Rendering house:", house);
-      $("#app").prepend(html`
+      console.log(JSON.stringify(house));
+
+      $(`#app`).prepend(html`
         <div id="${house.id}" class="card">
           <div class="card-header">
             <h2>${house.name}</h2>
@@ -149,32 +171,32 @@ class DOMManager {
             </button>
           </div>
           <div class="card-body">
-            <div class="card">
-              <div class="row">
-                <div class="col-sm">
-                  <input
-                    type="text"
-                    id="${house.name}-room-name"
-                    class="form-control"
-                    placeholder="room name"
-                  />
-                </div>
-                <div class="col-sm">
-                  <input
-                    type="text"
-                    id="${house.name}-room-area"
-                    class="form-control"
-                    placeholder="room area"
-                  />
-                </div>
+            <div class="row">
+              <div class="col-sm">
+                <input
+                  type="text"
+                  id="${house.id}-room-name"
+                  class="form-control"
+                  placeholder="room name"
+                />
               </div>
-              <button
-                id="${house.id}-new-room"
-                onclick="DOMManager.addRoom('${house.id}')"
-                class="btn btn-primary form-control"
-              >
-                Add
-              </button>
+              <div class="col-sm">
+                <input
+                  type="text"
+                  id="${house.id}-room-area"
+                  class="form-control"
+                  placeholder="room area"
+                />
+              </div>
+              <div class="col-sm">
+                <button
+                  id="${house.id}-new-room"
+                  onclick="DOMManager.addRoom('${house.id}')"
+                  class="btn btn-primary form-control"
+                >
+                  Add
+                </button>
+              </div>
             </div>
             <br />
             <div id="rooms-${house.id}">
@@ -201,6 +223,7 @@ class DOMManager {
 $("#create-new-house").click(() => {
   DOMManager.createHouse($("#new-house-name").val());
   $("#new-house-name").val("");
+  DOMManager.getAllHouses(); // Move inside the click event callback
 });
 
 DOMManager.getAllHouses();
