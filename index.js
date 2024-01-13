@@ -89,18 +89,26 @@ class DOMManager {
   }
 
   static addRoom(id) {
+    console.log("addRoom called with id", id);
+
     for (let house of this.houses) {
+      console.log("Checking house.id:", house.id);
+
       if (house.id == id) {
-        house.rooms.push(
-          new Room(
-            $(`#${house.id}-room-name`).val(),
-            $(`#${house.id}-room-area`).val()
-          )
-        );
+        console.log("Match found! Adding room to house with id:", house.id);
+
+        const roomName = $(`#${house.id}-room-name`).val();
+        const roomArea = $(`#${house.id}-room-area`).val();
+
+        console.log("Room name:", roomName);
+        console.log("Room area:", roomArea);
+
+        house.rooms.push(new Room(roomName, roomArea));
+
+        console.log("Updated house object", house);
+
         HouseService.updateHouse(house)
-          .then(() => {
-            return HouseService.getAllHouses();
-          })
+          .then(() => HouseService.getAllHouses())
           .then((houses) => this.render(houses));
       }
     }
@@ -112,9 +120,7 @@ class DOMManager {
           if (room.id == roomId) {
             house.rooms.splice(house.rooms.indexOf(room), 1);
             HouseService.updateHouse(house)
-              .then(() => {
-                return HouseService.getAllHouses();
-              })
+              .then(() => HouseService.getAllHouses())
               .then((houses) => this.render(houses));
           }
         }
@@ -124,30 +130,57 @@ class DOMManager {
 
   static render(houses) {
     this.houses = houses;
-    $("#app").empty();
+    $(`#app`).empty();
+
     for (let house of houses) {
-      $("#app").prepend(
-        `<div id="${house.id}" class="card">
-            <div class="card-header">
-                <h2>${house.name}</h2>
-                <button class="btn btn-danger" onclick="DOMManager.deleteHouse('${house.id}')">Delete</button>
-            </div>
-            
-            <div class="card-body">
-                <div class = "card">
-                    <div class ="row">
-                        <div class ="col-sm">
-                            <input type="text" id="${house.id}-room-name" class ="form-control" placeholder="Room Name">
-                        </div>
-                        <div class ="col-sm">
-                            <input type="text" id="${house.id}-room-area" class ="form-control" placeholder="Room Area">
-                        </div>
-                    </div>
-                    <button id="${house.id}-new-room" onclick="DOMManager.addRoom('${house.id}')" class="btn btn-primary form-control mt-3">Add</button>
+      console.log("Rendering house:", house);
+      $("#app").prepend(html`
+        <div id="${house.id}" class="card">
+          <div class="card-header">
+            <h2>${house.name}</h2>
+            <button
+              class="btn btn-danger"
+              onclick="DOMManager.deleteHouse('${house.id}')"
+            >
+              Delete
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="card">
+              <div class="row">
+                <div class="col-sm">
+                  <input
+                    type="text"
+                    id="${house.name}-room-name"
+                    class="form-control"
+                    placeholder="room name"
+                  />
                 </div>
+                <div class="col-sm">
+                  <input
+                    type="text"
+                    id="${house.name}-room-area"
+                    class="form-control"
+                    placeholder="room area"
+                  />
+                </div>
+              </div>
+              <button
+                id="${house.id}-new-room"
+                onclick="DOMManager.addRoom('${house.id}')"
+                class="btn btn-primary form-control"
+              >
+                Add
+              </button>
             </div>
-        </div><br>`
-      );
+            <br />
+            <div id="rooms-${house.id}">
+              <!-- Display rooms here -->
+            </div>
+          </div>
+        </div>
+      `);
+
       for (let room of house.rooms) {
         $(`#${house.id}`)
           .find(".card-body")
@@ -164,7 +197,7 @@ class DOMManager {
 }
 $("#create-new-house").click(() => {
   DOMManager.createHouse($("#new-house-name").val());
-  $("#new-house-name").val = "";
+  $("#new-house-name").val("");
 });
 
 DOMManager.getAllHouses();
